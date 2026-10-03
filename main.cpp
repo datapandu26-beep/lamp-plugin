@@ -1,12 +1,17 @@
 #include <android/log.h>
 #include <mod/amlmod.h>
-#include <mod/config.h>
 
 #define LOG_TAG "LightsControl"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-MYMODCFG(net.byth.lightscontrol, LightsControl, 1.0, Byth)
+// Pengganti MYMODCFG manual agar tidak butuh library Config
+extern "C" {
+    const char* GUID = "net.byth.lightscontrol";
+    const char* Name = "LightsControl";
+    const char* Version = "1.0";
+    const char* Author = "Byth";
+}
 
 uintptr_t pGTASA = 0;
 
