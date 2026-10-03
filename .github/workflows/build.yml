@@ -1,19 +1,31 @@
 name: Build AML Plugin
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up NDK
-        uses: nmontes/setup-ndk@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download AML SDK Headers
+        run: |
+          wget -O AML.zip https://github.com/RusJJ/AndroidModLoader/archive/refs/heads/main.zip
+          unzip AML.zip
+          mkdir -p mod
+          cp -r AndroidModLoader-main/mod/* ./mod/
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
         with:
           ndk-version: r25b
-      - name: Build arm64-v8a
+
+      - name: Build with ndk-build
         run: |
-          $ANDROID_NDK_HOME/ndk-build APP_ABI=arm64-v8a LOCAL_PATH=.
+          ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk APP_ABI=arm64-v8a
+
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: LightsControl-64bit
           path: libs/arm64-v8a/libLightsControl.so
