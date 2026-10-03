@@ -2,19 +2,35 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 
-// Registrasi modul AML
-MYMODCFG(net.byth.lightscontrol, GTA SA Vehicle Lights Control, 1.0, Byth)
+MYMODCFG(net.byth.lightscontrol, GTA SA Vehicle Lights Control, 1.1, Byth)
 
 uintptr_t pGTASA = 0;
 
+// Struct aman untuk membaca status tombol klakson pada GTA SA v2.10 64-bit
+class CPad {
+public:
+    static CPad* GetPad(int player) {
+        typedef CPad* (*GetPadFn)(int);
+        static GetPadFn fn = (GetPadFn)aml->GetSym(pGTASA, "_ZN4CPad6GetPadEi");
+        return fn ? fn(player) : nullptr;
+    }
+
+    // Offset tombol klakson pada CPad 64-bit
+    bool GetHornJustDown() {
+        return *(bool*)((uintptr_t)this + 0x120); 
+    }
+};
+
 class CVehicle {
 public:
-    void ToggleLights() {
-        unsigned char* pFlags = (unsigned char*)((uintptr_t)this + 0x5A0); 
-        if (*pFlags == 2) {
-            *pFlags = 1;
+    void ToggleOverrideLights() {
+        // Offset override lights untuk GTA SA v2.10 64-bit
+        unsigned char* pLightMode = (unsigned char*)((uintptr_t)this + 0x6A4); 
+        
+        if (*pLightMode == 2) {
+            *pLightMode = 1; // Paksa Mati
         } else {
-            *pFlags = 2;
+            *pLightMode = 2; // Paksa Menyala
         }
     }
 };
@@ -32,28 +48,22 @@ void hook_CAutomobile_Update(void* self) {
         orig_CAutomobile_Update(self);
     }
 
-    if (FindPlayerPed) {
-        CPlayerPed* pPlayer = FindPlayerPed(-1);
-        if (pPlayer && pPlayer->m_pMyVehicle == (CVehicle*)self) {
-            bool bHorn = *(bool*)((uintptr_t)self + 0x4D5); 
-            static bool bWasHorn = false;
-            
-            if (bHorn && !bWasHorn) {
-                pPlayer->m_pMyVehicle->ToggleLights();
-            }
-            bWasHorn = bHorn;
+    if (!FindPlayerPed) return;
+
+    CPlayerPed* pPlayer = FindPlayerPed(-1);
+    if (pPlayer && pPlayer->m_pMyVehicle == (CVehicle*)self) {
+        CPad* pPad = CPad::GetPad(0);
+        if (pPad && pPad->GetHornJustDown()) {
+            pPlayer->m_pMyVehicle->ToggleOverrideLights();
         }
     }
 }
 
-// Tambahkan attribute default visibility agar OnModLoad terbaca oleh AML
 extern "C" __attribute__((visibility("default"))) void OnModLoad() {
     logger->SetTag("LightsControl");
-    logger->Info("LightsControl plugin berhasil dimuat!");
-
     pGTASA = aml->GetLib("libGTASA.so");
     if (!pGTASA) {
-        logger->Error("Gagal menemukan libGTASA.so");
+        logger->Error("libGTASA.so tidak ditemukan!");
         return;
     }
 
@@ -62,7 +72,7 @@ extern "C" __attribute__((visibility("default"))) void OnModLoad() {
     uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
     if (updateAddr) {
         aml->Hook((void*)updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
-        logger->Info("Hook CAutomobile::Update berhasil dipasang!");
+        logger->Info("Berhasil hook CAutomobile::Update untuk GTA SA v2.10!");
     } else {
         logger->Error("Gagal menemukan symbol CAutomobile::Update");
     }
