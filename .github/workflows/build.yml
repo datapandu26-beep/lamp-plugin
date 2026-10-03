@@ -14,8 +14,8 @@ jobs:
       - name: Clone AML SDK
         run: |
           git clone --depth 1 https://github.com/RusJJ/AndroidModLoader.git
-          mkdir -p AML/include
-          cp -r AndroidModLoader/mod AML/include/
+          mkdir -p AML/include/mod
+          cp -r AndroidModLoader/mod/* AML/include/mod/
 
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
