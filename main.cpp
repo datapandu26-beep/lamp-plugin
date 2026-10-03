@@ -2,6 +2,7 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 
+// Registrasi modul AML
 MYMODCFG(net.byth.lightscontrol, GTA SA Vehicle Lights Control, 1.0, Byth)
 
 uintptr_t pGTASA = 0;
@@ -45,15 +46,24 @@ void hook_CAutomobile_Update(void* self) {
     }
 }
 
-extern "C" void OnModLoad() {
+// Tambahkan attribute default visibility agar OnModLoad terbaca oleh AML
+extern "C" __attribute__((visibility("default"))) void OnModLoad() {
     logger->SetTag("LightsControl");
+    logger->Info("LightsControl plugin berhasil dimuat!");
+
     pGTASA = aml->GetLib("libGTASA.so");
-    if (!pGTASA) return;
+    if (!pGTASA) {
+        logger->Error("Gagal menemukan libGTASA.so");
+        return;
+    }
 
     FindPlayerPed = (CPlayerPed*(*)(int))aml->GetSym(pGTASA, "_Z13FindPlayerPedi");
 
     uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
     if (updateAddr) {
         aml->Hook((void*)updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
+        logger->Info("Hook CAutomobile::Update berhasil dipasang!");
+    } else {
+        logger->Error("Gagal menemukan symbol CAutomobile::Update");
     }
 }
