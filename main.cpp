@@ -1,6 +1,9 @@
+#include <android/log.h>
 #include <mod/amlmod.h>
-#include <mod/logger.h>
-#include <mod/config.h>
+
+#define LOG_TAG "LightsControl"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 MYMODCFG(net.byth.lightscontrol, LightsControl, 1.0, Byth)
 
@@ -56,16 +59,21 @@ void hook_CAutomobile_Update(void* self) {
 }
 
 extern "C" __attribute__((visibility("default"))) void OnModLoad() {
-    logger->SetTag("LightsControl");
-    logger->Info("LightsControl berhasil dimuat!");
+    LOGI("Plugin LightsControl dimuat!");
 
     pGTASA = aml->GetLib("libGTASA.so");
-    if (!pGTASA) return;
+    if (!pGTASA) {
+        LOGE("libGTASA.so tidak ditemukan!");
+        return;
+    }
 
     FindPlayerPed = (CPlayerPed*(*)(int))aml->GetSym(pGTASA, "_Z13FindPlayerPedi");
 
     uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
     if (updateAddr) {
         aml->Hook((void*)updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
+        LOGI("Hook berhasil!");
+    } else {
+        LOGE("Gagal menemukan symbol CAutomobile::Update");
     }
 }
