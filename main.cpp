@@ -1,5 +1,6 @@
 #include <android/log.h>
 #include <mod/amlmod.h>
+#include <mod/config.h>
 
 #define LOG_TAG "LightsControl"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
