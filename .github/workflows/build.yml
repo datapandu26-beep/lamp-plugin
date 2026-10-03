@@ -1,0 +1,20 @@
+name: Build AML Plugin
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up NDK
+        uses: nmontes/setup-ndk@v1
+        with:
+          ndk-version: r25b
+      - name: Build arm64-v8a
+        run: |
+          $ANDROID_NDK_HOME/ndk-build APP_ABI=arm64-v8a LOCAL_PATH=.
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: LightsControl-64bit
+          path: libs/arm64-v8a/libLightsControl.so
+          
