@@ -2,11 +2,11 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 
-MYMODCFG(net.byth.lightscontrol, GTA SA Vehicle Lights Control, 1.1, Byth)
+// Gunakan makro standar AML
+MYMOD(net.byth.lightscontrol, LightsControl, 1.0, Byth)
 
 uintptr_t pGTASA = 0;
 
-// Struct aman untuk membaca status tombol klakson pada GTA SA v2.10 64-bit
 class CPad {
 public:
     static CPad* GetPad(int player) {
@@ -15,7 +15,6 @@ public:
         return fn ? fn(player) : nullptr;
     }
 
-    // Offset tombol klakson pada CPad 64-bit
     bool GetHornJustDown() {
         return *(bool*)((uintptr_t)this + 0x120); 
     }
@@ -24,9 +23,7 @@ public:
 class CVehicle {
 public:
     void ToggleOverrideLights() {
-        // Offset override lights untuk GTA SA v2.10 64-bit
         unsigned char* pLightMode = (unsigned char*)((uintptr_t)this + 0x6A4); 
-        
         if (*pLightMode == 2) {
             *pLightMode = 1; // Paksa Mati
         } else {
@@ -59,8 +56,11 @@ void hook_CAutomobile_Update(void* self) {
     }
 }
 
+// Pastikan fungsi dipanggil saat AML memuat modul
 extern "C" __attribute__((visibility("default"))) void OnModLoad() {
     logger->SetTag("LightsControl");
+    logger->Info("Plugin LightsControl mulai dimuat...");
+
     pGTASA = aml->GetLib("libGTASA.so");
     if (!pGTASA) {
         logger->Error("libGTASA.so tidak ditemukan!");
@@ -72,7 +72,7 @@ extern "C" __attribute__((visibility("default"))) void OnModLoad() {
     uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
     if (updateAddr) {
         aml->Hook((void*)updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
-        logger->Info("Berhasil hook CAutomobile::Update untuk GTA SA v2.10!");
+        logger->Info("Berhasil hook CAutomobile::Update!");
     } else {
         logger->Error("Gagal menemukan symbol CAutomobile::Update");
     }
