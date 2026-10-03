@@ -8,11 +8,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download AML SDK Headers
+      - name: Download Official AML SDK
         run: |
-          wget -q -O aml_sdk.zip https://github.com/RusJJ/AndroidModLoader/archive/refs/heads/main.zip
-          unzip -q aml_sdk.zip
-          cp -r AndroidModLoader-main/mod .
+          git clone --depth 1 https://github.com/RusJJ/AndroidModLoader.git
+          mkdir -p AML/include
+          cp -r AndroidModLoader/mod AML/include/
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
