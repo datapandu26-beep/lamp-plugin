@@ -10,17 +10,16 @@ jobs:
 
       - name: Download AML SDK Headers
         run: |
-          wget -O AML.zip https://github.com/RusJJ/AndroidModLoader/archive/refs/heads/main.zip
-          unzip AML.zip
-          mkdir -p mod
-          cp -r AndroidModLoader-main/mod/* ./mod/
+          wget -q -O aml_sdk.zip https://github.com/RusJJ/AndroidModLoader/archive/refs/heads/main.zip
+          unzip -q aml_sdk.zip
+          cp -r AndroidModLoader-main/mod .
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r25b
 
-      - name: Build with ndk-build
+      - name: Build arm64-v8a
         run: |
           ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk APP_ABI=arm64-v8a
 
