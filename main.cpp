@@ -54,6 +54,6 @@ extern "C" void OnModLoad() {
 
     uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
     if (updateAddr) {
-        aml->Hook(updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
+        aml->Hook((void*)updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
     }
 }
