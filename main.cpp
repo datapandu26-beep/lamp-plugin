@@ -9,6 +9,7 @@ uintptr_t pGTASA = 0;
 class CVehicle {
 public:
     void ToggleLights() {
+        // Offset flag lampu kendaraan GTA SA 64-bit
         unsigned char* pFlags = (unsigned char*)((uintptr_t)this + 0x5A0); 
         if (*pFlags == 2) {
             *pFlags = 1;
@@ -25,22 +26,24 @@ public:
 
 CPlayerPed* (*FindPlayerPed)(int id) = nullptr;
 
-bool (*orig_IsHornPressed)(void* self);
-bool hook_IsHornPressed(void* self) {
-    static bool bWasPressed = false;
-    bool bIsPressed = orig_IsHornPressed(self);
+// Hook proses klakson
+void (*orig_CAutomobile_Update)(void* self);
+void hook_CAutomobile_Update(void* self) {
+    orig_CAutomobile_Update(self);
 
-    if (bIsPressed && !bWasPressed) {
-        if (FindPlayerPed) {
-            CPlayerPed* pPlayer = FindPlayerPed(-1);
-            if (pPlayer && pPlayer->m_pMyVehicle) {
+    if (FindPlayerPed) {
+        CPlayerPed* pPlayer = FindPlayerPed(-1);
+        if (pPlayer && pPlayer->m_pMyVehicle == (CVehicle*)self) {
+            // Cek status klakson kendaraan
+            bool bHorn = *(bool*)((uintptr_t)self + 0x4D5); 
+            static bool bWasHorn = false;
+            
+            if (bHorn && !bWasHorn) {
                 pPlayer->m_pMyVehicle->ToggleLights();
             }
+            bWasHorn = bHorn;
         }
     }
-
-    bWasPressed = bIsPressed;
-    return bIsPressed;
 }
 
 extern "C" void OnModLoad() {
@@ -50,9 +53,8 @@ extern "C" void OnModLoad() {
 
     FindPlayerPed = (CPlayerPed*(*)(int))aml->GetSym(pGTASA, "_Z13FindPlayerPedi");
 
-    uintptr_t hornFuncAddr = aml->GetSym(pGTASA, "_ZN11CWidgetHorn6UpdateEv"); 
-    if (hornFuncAddr) {
-        // PERBAIKAN: AML Redirect versi baru hanya membutuhkan 2 argumen
-        aml->Redirect(hornFuncAddr, (uintptr_t)hook_IsHornPressed);
+    uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
+    if (updateAddr) {
+        aml->Redirect(updateAddr, (uintptr_t)hook_Automobile_Update);
     }
 }
