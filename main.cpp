@@ -2,8 +2,7 @@
 #include <mod/logger.h>
 #include <mod/config.h>
 
-// Gunakan makro standar AML
-MYMOD(net.byth.lightscontrol, LightsControl, 1.0, Byth)
+MYMODCFG(net.byth.lightscontrol, LightsControl, 1.0, Byth)
 
 uintptr_t pGTASA = 0;
 
@@ -16,18 +15,18 @@ public:
     }
 
     bool GetHornJustDown() {
-        return *(bool*)((uintptr_t)this + 0x120); 
+        return *(bool*)((uintptr_t)this + 0x120);
     }
 };
 
 class CVehicle {
 public:
     void ToggleOverrideLights() {
-        unsigned char* pLightMode = (unsigned char*)((uintptr_t)this + 0x6A4); 
+        unsigned char* pLightMode = (unsigned char*)((uintptr_t)this + 0x6A4);
         if (*pLightMode == 2) {
-            *pLightMode = 1; // Paksa Mati
+            *pLightMode = 1;
         } else {
-            *pLightMode = 2; // Paksa Menyala
+            *pLightMode = 2;
         }
     }
 };
@@ -56,24 +55,17 @@ void hook_CAutomobile_Update(void* self) {
     }
 }
 
-// Pastikan fungsi dipanggil saat AML memuat modul
 extern "C" __attribute__((visibility("default"))) void OnModLoad() {
     logger->SetTag("LightsControl");
-    logger->Info("Plugin LightsControl mulai dimuat...");
+    logger->Info("LightsControl berhasil dimuat!");
 
     pGTASA = aml->GetLib("libGTASA.so");
-    if (!pGTASA) {
-        logger->Error("libGTASA.so tidak ditemukan!");
-        return;
-    }
+    if (!pGTASA) return;
 
     FindPlayerPed = (CPlayerPed*(*)(int))aml->GetSym(pGTASA, "_Z13FindPlayerPedi");
 
     uintptr_t updateAddr = aml->GetSym(pGTASA, "_ZN11CAutomobile6UpdateEv");
     if (updateAddr) {
         aml->Hook((void*)updateAddr, (void*)hook_CAutomobile_Update, (void**)&orig_CAutomobile_Update);
-        logger->Info("Berhasil hook CAutomobile::Update!");
-    } else {
-        logger->Error("Gagal menemukan symbol CAutomobile::Update");
     }
 }
