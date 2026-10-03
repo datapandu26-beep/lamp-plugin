@@ -52,6 +52,7 @@ extern "C" void OnModLoad() {
 
     uintptr_t hornFuncAddr = aml->GetSym(pGTASA, "_ZN11CWidgetHorn6UpdateEv"); 
     if (hornFuncAddr) {
-        aml->Redirect(hornFuncAddr, (uintptr_t)hook_IsHornPressed, (uintptr_t*)&orig_IsHornPressed);
+        // PERBAIKAN: AML Redirect versi baru hanya membutuhkan 2 argumen
+        aml->Redirect(hornFuncAddr, (uintptr_t)hook_IsHornPressed);
     }
 }
